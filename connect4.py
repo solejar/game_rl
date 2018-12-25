@@ -7,6 +7,15 @@ def select_action(action_space, curr_state, policy):
     valid_cols = np.nonzero(action_space<6)[0]
     if policy=='random':
         return np.random.choice(valid_cols)
+    elif policy=='human':
+
+        while 1<2:
+            selected_col = int(input('Choose a column from ' + ', '.join('{0}'.format(n) for n in valid_cols.tolist()) + '\n'))
+
+            if np.isin(selected_col,valid_cols):
+                return selected_col
+            else:
+                print('Your selection needs to be from the following: ' + ', '.join('{0}'.format(n) for n in valid_cols.tolist()))
 
 #offset directions for the 4 axes of game completion
 #which are up-down, left-right, forward diag, backward diag
@@ -101,6 +110,8 @@ def play_game(policy1='random',policy2='random', draw=False):
     while 1<2:
 
         #decide where current player will drop disc
+        if draw:
+            print(np.flip(game_board[0],0))
         action_col = select_action(action_space,game_board,player_policies[curr_player])
 
         #figure out current unoccupied row in that column
@@ -117,7 +128,7 @@ def play_game(policy1='random',policy2='random', draw=False):
 
         if game_over:
             print('Player ',curr_player+1, ' is the winner!') #adjust index 0,1 ->1,2
-            print(game_board[0])
+            print(np.flip(game_board[0],0))
             break
         elif np.sum(action_space) == 42: #this occurs if all 42 discs are filled $ no one has won
             print('Game ends in a draw')
@@ -130,4 +141,4 @@ def play_game(policy1='random',policy2='random', draw=False):
 
 if __name__ =='__main__':
 
-    play_game()
+    play_game(policy1='random',policy2='human',draw=True)
