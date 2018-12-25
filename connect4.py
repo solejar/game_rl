@@ -1,7 +1,29 @@
 import numpy as np
+from graphics import *
+
+win = GraphWin("Connect 4 Board", 400,400)
+
+def draw_initial_board():
+
+    for row in range(1,7):
+        for col in range(1,8):
+            c = Circle(Point(col*50,row*50),15)
+            c.draw(win)
+
+def draw_new_piece(new_row,new_col, player_index):
+    if player_index==0:
+        color='blue'
+    else:
+        color='red'
+
+    piece_x = (new_col+1)*50
+    piece_y = (6-new_row)*50
+    new_circle = Circle(Point(piece_x,piece_y),15)
+    new_circle.setFill(color)
+    new_circle.draw(win)
 
 #technically functional, at least for random selection
-def select_action(action_space, curr_state, policy):
+def select_action(action_space, curr_state, policy, draw=False):
 
     #return the indices of non-full columns
     valid_cols = np.nonzero(action_space<6)[0]
@@ -10,12 +32,28 @@ def select_action(action_space, curr_state, policy):
     elif policy=='human':
 
         while 1<2:
-            selected_col = int(input('Choose a column from ' + ', '.join('{0}'.format(n) for n in valid_cols.tolist()) + '\n'))
+            message = 'Choose a column from ' + ', '.join('{0}'.format(n+1) for n in valid_cols.tolist())
+            if draw:
+                textObj = Text(Point(200,350),message)
+                textObj.draw(win)
+                selected_col = int(win.getKey())
+                textObj.undraw()
 
-            if np.isin(selected_col,valid_cols):
-                return selected_col
             else:
-                print('Your selection needs to be from the following: ' + ', '.join('{0}'.format(n) for n in valid_cols.tolist()))
+
+                selected_col = int(input(message+'\n'))
+
+            if np.isin(selected_col-1,valid_cols):
+                return selected_col-1
+            else:
+                message = 'Your selection needs to be from the following: ' + ', '.join('{0}'.format(n+1) for n in valid_cols.tolist())
+                if draw:
+                    textObj = Text(Point(200,350),message)
+                    textObj.draw(win)
+                    win.getKey()
+                    textObj.undraw()
+                else:
+                    print(message)
 
 #offset directions for the 4 axes of game completion
 #which are up-down, left-right, forward diag, backward diag
@@ -87,6 +125,11 @@ def victory_check(game_board,new_row,new_col):
 
 def play_game(policy1='random',policy2='random', draw=False):
 
+    if draw:
+        draw_initial_board()
+
+
+
     #the action space is represented by a 1x7 array
     #values represent how many discs are currently in the column
     action_space = np.full((1,7),0)[0]
@@ -110,28 +153,44 @@ def play_game(policy1='random',policy2='random', draw=False):
     while 1<2:
 
         #decide where current player will drop disc
-        if draw:
-            print(np.flip(game_board[0],0))
-        action_col = select_action(action_space,game_board,player_policies[curr_player])
+        action_col = select_action(action_space,game_board,player_policies[curr_player],draw)
 
         #figure out current unoccupied row in that column
         action_row = action_space[action_col]
-
-        #print('action_space: ', action_space, ' , action_row: ' ,action_row,' , action_col: ', action_col)
 
         #increment the action space and add the disc to the game board
         action_space[action_col] += 1
         game_board[0][action_row][action_col] = 1
 
+        if draw:
+            draw_new_piece(action_row, action_col, curr_player)
+
         #check if that move ended the game
         game_over = victory_check(game_board,action_row,action_col)
 
         if game_over:
-            print('Player ',curr_player+1, ' is the winner!') #adjust index 0,1 ->1,2
-            print(np.flip(game_board[0],0))
+            message = 'Player {0} is the winner!'.format(str(curr_player+1))
+
+            if draw:
+                textObj = Text(Point(200,350),message)
+                textObj.draw(win)
+                win.getMouse()
+                win.close()
+
+            else:
+                print(message)
             break
+
         elif np.sum(action_space) == 42: #this occurs if all 42 discs are filled $ no one has won
-            print('Game ends in a draw')
+            message = 'Game ends in a draw'
+
+            if draw:
+                win.getMouse()
+                win.close()
+
+            else:
+                print(message)
+
             break
 
         #alternate the players & 'flip' polarity of game board
